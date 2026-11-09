@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from src.features.correlation import autocorrelation_features, bit_plane_features
 from src.features.statistical import byte_chi2_features, entropy_features, monobit_features, runs_features
 
 FEATURE_GROUPS = {
@@ -9,6 +10,8 @@ FEATURE_GROUPS = {
     "entropy": entropy_features,
     "runs": runs_features,
     "byte_chi2": byte_chi2_features,
+    "autocorrelation": autocorrelation_features,
+    "bit_planes": bit_plane_features,
 }
 
 
