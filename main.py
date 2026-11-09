@@ -5,10 +5,12 @@
     python main.py generate lcg --output-shift 0
     python main.py features
     python main.py features --generators csprng lcg --lengths 1024 --groups monobit entropy
+    python main.py analyze
 """
 
 import argparse
 
+from src.analysis.report import analyze_features
 from src.dataset.generate import generate_datasets
 from src.features.compute import compute_features
 from src.features.extract import FEATURE_GROUPS
@@ -24,6 +26,7 @@ DEFAULT_LENGTHS = [64, 128, 256, 512, 1024, 4096]
 DEFAULT_SAMPLES = 50_000
 DEFAULT_OUTPUT = "data/raw"
 DEFAULT_FEATURES_OUTPUT = "data/features"
+DEFAULT_REPORT_OUTPUT = "reports/figures"
 WEAK_ONLY_OPTIONS = ("seed_bits", "output_shift")
 
 
@@ -51,6 +54,12 @@ def parse_args() -> argparse.Namespace:
     features.add_argument("--groups", nargs="+", choices=FEATURE_GROUPS, default=None,
                           help="feature groups (default: all)")
 
+    analyze = commands.add_parser("analyze", help="per-feature ROC-AUC table and report figures")
+    analyze.add_argument("--input", default=DEFAULT_FEATURES_OUTPUT, help="directory with extracted features")
+    analyze.add_argument("--output", default=DEFAULT_REPORT_OUTPUT, help="output directory for CSV and figures")
+    analyze.add_argument("--distribution-lengths", type=int, nargs="+", default=[256, 4096],
+                         help="lengths for which feature histograms are drawn")
+
     return parser.parse_args()
 
 
@@ -64,6 +73,8 @@ def main() -> None:
         generate_datasets(GENERATORS[args.generator](**options), args.lengths, args.samples, args.output)
     elif args.command == "features":
         compute_features(args.input, args.output, args.generators, args.lengths, args.groups)
+    elif args.command == "analyze":
+        analyze_features(args.input, args.output, args.distribution_lengths)
 
 
 if __name__ == "__main__":
