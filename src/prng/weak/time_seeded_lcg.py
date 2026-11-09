@@ -13,17 +13,33 @@ class TimeSeededLCGGenerator(BaseGenerator):
 
     The seed is a high-resolution tick counter truncated to `seed_bits` bits,
     so the whole seed space has only 2**seed_bits values and is guessable by an attacker.
+
+    `output_shift` selects which state bits form the output byte. In a power-of-two LCG bit j has
+    period 2**(j+1), so shift 0 (raw low byte, a common firmware bug) is grossly defective, while
+    shift 16 (glibc rand()-like) hides the short-period bits.
     """
 
-    name = "lcg"
     label = 1
 
     def __init__(self, seed_bits: int = DEFAULT_SEED_BITS, a: int = DEFAULT_A, c: int = DEFAULT_C,
                  m: int = DEFAULT_M, output_shift: int = DEFAULT_OUTPUT_SHIFT):
         if not 1 <= seed_bits <= 63:
             raise ValueError(f"seed_bits must be in [1, 63], got {seed_bits}")
+        if not 0 <= output_shift <= m.bit_length() - 9:
+            raise ValueError(f"output_shift must leave 8 state bits, got {output_shift} for m={m}")
         self.seed_bits = seed_bits
         self.a, self.c, self.m, self.output_shift = a, c, m, output_shift
+        self.name = self._variant_name()
+
+    def _variant_name(self) -> str:
+        # The default configuration keeps the plain "lcg" name so existing datasets stay valid;
+        # every non-default knob gets a suffix so variants never overwrite each other on disk.
+        name = "lcg"
+        if self.output_shift != DEFAULT_OUTPUT_SHIFT:
+            name += f"_shift{self.output_shift}"
+        if self.seed_bits != DEFAULT_SEED_BITS:
+            name += f"_seed{self.seed_bits}"
+        return name
 
     def _time_seed(self) -> int:
         # time.time_ns() has ~15.6 ms resolution on Windows, which would give every sample in a tight
