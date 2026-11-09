@@ -179,3 +179,7 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Derived feature matrices (regenerate with `python main.py features`)
+data/features/
+~$*
